@@ -61,11 +61,11 @@ class _BudgetHomePageState extends State<BudgetHomePage> {
                     return Container(
                       margin: const EdgeInsets.all(8.0),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: getCategoryColor(item.color).withOpacity(0.5),
                         borderRadius: BorderRadius.circular(10.0),
                         border: Border.all(
                           width: 2.0,
-                          color: getCategoryColor(item.category),
+                          color: getCategoryColor(item.color),
                         ),
                         boxShadow: const [
                           BoxShadow(

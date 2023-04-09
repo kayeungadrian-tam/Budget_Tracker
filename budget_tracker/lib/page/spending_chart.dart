@@ -13,13 +13,23 @@ class SpendingChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final spending = <String, double>{};
+    // final spending = <String, double>{};
+    final spending = <String, Map<String, double>>{};
+
+    double totalAmount = items.fold(0, (sum, item) => sum + item.amount);
 
     items.forEach(
       (item) => spending.update(
         item.category,
-        (value) => value + item.amount,
-        ifAbsent: () => item.amount,
+        (value) => value
+          ..update(
+            item.color,
+            (value) => value + item.amount,
+            ifAbsent: () => item.amount,
+          ),
+        ifAbsent: () => {
+          item.color: item.amount,
+        },
       ),
     );
 
@@ -36,16 +46,25 @@ class SpendingChart extends StatelessWidget {
               child: PieChart(
                 PieChartData(
                   sections: spending
-                      .map((category, amountSpent) => MapEntry(
-                            category,
-                            PieChartSectionData(
-                              color: getCategoryColor(category),
+                      .map(
+                        (category, colors) => MapEntry(
+                          category,
+                          colors.entries.map((entry) {
+                            final color = entry.key;
+                            final amount = entry.value;
+                            final title =
+                                '${(100 * amount / totalAmount).toStringAsFixed(1)}%';
+                            return PieChartSectionData(
+                              color: getCategoryColor(color),
                               radius: 100.0,
-                              title: '\￥${amountSpent.toStringAsFixed(2)}',
-                              value: amountSpent,
-                            ),
-                          ))
+                              title: title,
+                              value: amount,
+                            );
+                          }).toList(),
+                        ),
+                      )
                       .values
+                      .expand((colorSections) => colorSections)
                       .toList(),
                   sectionsSpace: 0,
                 ),
@@ -55,12 +74,16 @@ class SpendingChart extends StatelessWidget {
             Wrap(
               spacing: 8.0,
               runSpacing: 8.0,
-              children: spending.keys
-                  .map((category) => _Indicator(
-                        color: getCategoryColor(category),
-                        text: category,
-                      ))
-                  .toList(),
+              children: spending.entries.expand((entry) {
+                String category = entry.key;
+                Map<String, double> colorMap = entry.value;
+                return colorMap.keys.map((color) {
+                  return _Indicator(
+                    color: getCategoryColor(color),
+                    text: category,
+                  );
+                });
+              }).toList(),
             ),
           ],
         ),
