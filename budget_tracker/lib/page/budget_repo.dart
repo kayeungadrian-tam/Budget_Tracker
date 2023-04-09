@@ -61,10 +61,6 @@ class BudgetRepository {
             ]
           },
           'amount': {'type': 'number', 'number': amount},
-          'date': {
-            'type': 'date',
-            'date': {'start': '2021-05-11'}
-          },
           'category': {
             'select': {'name': category}
           }

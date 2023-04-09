@@ -1,9 +1,8 @@
-import 'dart:convert';
-import 'dart:io';
+// import 'dart:convert';
+// import 'dart:io';
 import 'package:budget_tracker/page/fail_page.dart';
 import 'package:budget_tracker/page/spending_chart.dart';
 import 'package:budget_tracker/utils/color.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:budget_tracker/model/item.dart';
@@ -25,23 +24,79 @@ class BudgetHomePage extends StatefulWidget {
 class _BudgetHomePageState extends State<BudgetHomePage> {
   Future<List<Item>>? _futureItems;
   final _textEditingController = TextEditingController();
-  final _items = ['Food', 'Item 2', 'Item 3', 'Item 4', 'Item 5'];
-  String? _inputData = '';
+  final String _inputData = '';
   String? _selectedItem;
   int? _inpurAmount;
+
+  bool showRawValue = false;
+
+  Set<String> categories = {};
 
   @override
   void initState() {
     super.initState();
     _futureItems = BudgetRepository().getItems();
+    _futureItems?.then((items) {
+      categories = items.map((item) => item.category).toSet();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: const Text("Tam"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.percent),
+            onPressed: () => {
+              setState(() {
+                showRawValue = !showRawValue;
+              })
+            },
+          ),
+        ],
       ),
+      // endDrawer: Drawer(
+      //   elevation: 16.0,
+      //   child: Column(
+      //     children: <Widget>[
+      //       UserAccountsDrawerHeader(
+      //         accountName: Text("xyz"),
+      //         accountEmail: Text("xyz@gmail.com"),
+      //         currentAccountPicture: CircleAvatar(
+      //           backgroundColor: Colors.white,
+      //           child: Text("xyz"),
+      //         ),
+      //         otherAccountsPictures: <Widget>[
+      //           CircleAvatar(
+      //             backgroundColor: Colors.white,
+      //             child: Text("abc"),
+      //           )
+      //         ],
+      //       ),
+      //       ListTile(
+      //         title: new Text("All Inboxes"),
+      //         leading: new Icon(Icons.mail),
+      //       ),
+      //       Divider(
+      //         height: 0.1,
+      //       ),
+      //       ListTile(
+      //         title: new Text("Primary"),
+      //         leading: new Icon(Icons.inbox),
+      //       ),
+      //       ListTile(
+      //         title: new Text("Social"),
+      //         leading: new Icon(Icons.people),
+      //       ),
+      //       ListTile(
+      //         title: new Text("Promotions"),
+      //         leading: new Icon(Icons.local_offer),
+      //       )
+      //     ],
+      //   ),
+      // ),
       body: RefreshIndicator(
         onRefresh: () async {
           _futureItems = BudgetRepository().getItems();
@@ -55,7 +110,12 @@ class _BudgetHomePageState extends State<BudgetHomePage> {
                 return ListView.builder(
                   itemCount: items.length + 1,
                   itemBuilder: (BuildContext context, index) {
-                    if (index == 0) return SpendingChart(items: items);
+                    if (index == 0) {
+                      return SpendingChart(
+                        items: items,
+                        showRawValue: showRawValue,
+                      );
+                    }
 
                     final item = items[index - 1];
                     return Container(
@@ -99,20 +159,20 @@ class _BudgetHomePageState extends State<BudgetHomePage> {
           Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => _InputPage(
-                      textEditingController: _textEditingController,
-                      selectedItem: _selectedItem,
-                      items: _items,
-                      inputData: _inputData,
-                      inputAmount: _inpurAmount,
-                      onSubmitted: (value, selectedItem, inputAmount) {
-                        print('Input Data: $value');
-                        print('Amount; ');
-                        print('Selected item; $selectedItem');
-                        BudgetRepository()
-                            .addItem(value, inputAmount, selectedItem);
-                        // Navigator.pop(context);
-                      })));
+                  builder: (
+                context,
+              ) =>
+                      _InputPage(
+                          textEditingController: _textEditingController,
+                          selectedItem: _selectedItem,
+                          items: categories.toList(),
+                          inputData: _inputData,
+                          inputAmount: _inpurAmount,
+                          onSubmitted: (value, selectedItem, inputAmount) {
+                            BudgetRepository()
+                                .addItem(value, inputAmount, selectedItem);
+                            // Navigator.pop(context);
+                          })));
         },
         tooltip: 'Increment',
         child: const Icon(Icons.add),
@@ -157,11 +217,26 @@ class __InputPageState extends State<_InputPage> {
     _selectedItem = widget.selectedItem;
   }
 
+  validateInt(value) {
+    if (!value.isEmpty) {
+      try {
+        int inputAmount = int.parse(value);
+        if (inputAmount > 0) {
+          return inputAmount;
+        }
+      } catch (FormatException) {
+        print('Input value must be a valid integer.');
+      }
+    } else {
+      print('Input value cannot be empty.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Input Data'),
+        title: const Text('Input Data'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -177,7 +252,7 @@ class __InputPageState extends State<_InputPage> {
                   // widget.onSubmitted(value, "test");
                 });
               },
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Enter Data',
                 border: OutlineInputBorder(),
               ),
@@ -187,14 +262,14 @@ class __InputPageState extends State<_InputPage> {
             ),
             TextField(
               keyboardType: TextInputType.number,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Enter a number',
                 border: OutlineInputBorder(),
               ),
               onChanged: (value) {
                 // Do something with the number input
                 setState(() {
-                  inputAmount = int.parse(value);
+                  inputAmount = validateInt(value);
                 });
               },
             ),
@@ -211,7 +286,7 @@ class __InputPageState extends State<_InputPage> {
                   // _selectedItem, inputAmount);
                 });
               },
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Select Item',
                 border: OutlineInputBorder(),
               ),
@@ -222,7 +297,7 @@ class __InputPageState extends State<_InputPage> {
                 );
               }).toList(),
             ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             ElevatedButton(
               onPressed: widget.textEditingController.text.isEmpty
                   ? null
@@ -231,7 +306,7 @@ class __InputPageState extends State<_InputPage> {
                       widget.onSubmitted(widget.textEditingController.text,
                           _selectedItem, inputAmount);
                     },
-              child: Text('Submit'),
+              child: const Text('Submit'),
             ),
           ],
         ),

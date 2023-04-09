@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 
 class SpendingChart extends StatelessWidget {
   final List<Item> items;
+  final bool showRawValue;
 
   const SpendingChart({
     Key? key,
     required this.items,
+    required this.showRawValue,
   }) : super(key: key);
 
   @override
@@ -52,8 +54,9 @@ class SpendingChart extends StatelessWidget {
                           colors.entries.map((entry) {
                             final color = entry.key;
                             final amount = entry.value;
-                            final title =
-                                '${(100 * amount / totalAmount).toStringAsFixed(1)}%';
+                            final title = showRawValue
+                                ? '${(100 * amount / totalAmount).toStringAsFixed(1)}%'
+                                : '￥${amount.toStringAsFixed(0)}';
                             return PieChartSectionData(
                               color: getCategoryColor(color),
                               radius: 100.0,
